@@ -67,30 +67,62 @@ export default function UploadSection({ onComplete }: UploadSectionProps) {
       setParsing(true);
 
       // Step 2: Parse using AI on Frontend
+            // Step 2: Parse using AI on Frontend
       const prompt = `
         Extract structured information from the following resume text. 
-        Return ONLY a JSON object with the following fields:
-        - name (string)
-        - email (string)
-        - phone (string)
-        - summary (string)
-        - skills (array of strings)
-        - education (array of objects with fields: degree, institution, year)
-        - experience (array of objects with fields: title, company, duration, description)
-        - projects (array of objects with fields: title, description)
+        
+        Return ONLY a valid JSON object with these fields:
+        {
+          "name": "",
+          "email": "",
+          "phone": "",
+          "summary": "",
+          "skills": [],
+          "education": [
+            {
+              "degree": "",
+              "institution": "",
+              "year": ""
+            }
+          ],
+          "experience": [
+            {
+              "title": "",
+              "company": "",
+              "duration": "",
+              "description": ""
+            }
+          ],
+          "projects": [
+            {
+              "title": "",
+              "description": ""
+            }
+          ]
+        }
 
         Resume Text:
         ${text}
       `;
 
-      const aiResult = await ai.models.generateContent({
+      const aiResult = await ai.chat.completions.create({
         model: MODELS.text,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
       });
 
-      let jsonText = aiResult.text?.trim() || "";
-      jsonText = jsonText.replace(/```json\n?|\n?```/g, "").trim();
-      
+      let jsonText =
+        aiResult.choices[0].message.content?.trim() || "";
+
+      jsonText = jsonText
+        .replace(/```json\n?|\n?```/g, "")
+        .trim();
+
       const parsedData = JSON.parse(jsonText);
       
       // Calculate a dummy ATS score or get it from AI
