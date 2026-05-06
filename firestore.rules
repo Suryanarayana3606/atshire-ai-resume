@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation for User entity
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'fullName', 'email', 'role', 'createdAt']) &&
+             data.keys().size() == 5 &&
+             data.id is string &&
+             data.fullName is string && data.fullName.size() <= 200 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.role in ['candidate', 'admin'] &&
+             data.createdAt is string;
+    }
+
+    // Validation for Resume entity
+    function isValidResume(data) {
+      return data.keys().hasAll(['userId', 'title', 'parsedData', 'atsScore', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 500 &&
+             data.atsScore is int && data.atsScore >= 0 && data.atsScore <= 100 &&
+             data.createdAt is string;
+    }
+
+    // Validation for JobDescription entity
+    function isValidJobDescription(data) {
+      return data.keys().hasAll(['userId', 'title', 'content', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 500 &&
+             data.content is string && data.content.size() <= 100000 &&
+             data.createdAt is string;
+    }
+
+    // Validation for JobMatch entity
+    function isValidJobMatch(data) {
+      return data.keys().hasAll(['resumeId', 'jdId', 'matchScore', 'createdAt']) &&
+             data.matchScore is int && data.matchScore >= 0 && data.matchScore <= 100 &&
+             data.createdAt is string;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fullName', 'role']);
+    }
+
+    match /resumes/{resumeId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidResume(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /jobDescriptions/{jdId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidJobDescription(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /jobMatches/{matchId} {
+      allow list: if isSignedIn(); // Queries should still be filtered by user
+      allow create: if isSignedIn() && isValidJobMatch(request.resource.data);
+      allow get: if isSignedIn(); 
+    }
+  }
+}

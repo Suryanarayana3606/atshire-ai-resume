@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["candidate", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "email", "role", "createdAt"]
+    },
+    "Resume": {
+      "title": "Resume",
+      "description": "Uploaded resume and its parsed data",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "originalFileUrl": { "type": "string" },
+        "parsedData": { "type": "object" },
+        "atsScore": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "parsedData", "atsScore", "createdAt"]
+    },
+    "JobDescription": {
+      "title": "Job Description",
+      "description": "Target job description for matching",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "extractedKeywords": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "content", "createdAt"]
+    },
+    "JobMatch": {
+      "title": "Job Match",
+      "description": "Comparison between a resume and a job description",
+      "type": "object",
+      "properties": {
+        "resumeId": { "type": "string" },
+        "jdId": { "type": "string" },
+        "matchScore": { "type": "integer" },
+        "missingKeywords": { "type": "array", "items": { "type": "string" } },
+        "suggestions": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["resumeId", "jdId", "matchScore", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "resumes/{resumeId}": {
+      "schema": "Resume",
+      "description": "Collection of resumes"
+    },
+    "jobDescriptions/{jdId}": {
+      "schema": "JobDescription",
+      "description": "Collection of job descriptions"
+    },
+    "jobMatches/{matchId}": {
+      "schema": "JobMatch",
+      "description": "Collection of matching results"
+    }
+  }
+}

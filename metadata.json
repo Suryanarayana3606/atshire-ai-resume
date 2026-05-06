@@ -1,0 +1,6 @@
+{
+  "name": "ATSHire AI",
+  "description": "AI-powered Applicant Tracking System with resume parsing, ATS scoring, and JD matching.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
