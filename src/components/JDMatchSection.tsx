@@ -46,16 +46,26 @@ export default function JDMatchSection({ resumes, jds, onComplete }: JDMatchSect
         ${jdText}
       `;
 
-      const aiResult = await ai.models.generateContent({
-        model: MODELS.text,
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      const aiResult = await ai.chat.completions.create({
+        model: MODELS.pro,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
       });
 
-      let jsonText = aiResult.text?.trim() || "";
-      jsonText = jsonText.replace(/```json\n?|\n?```/g, "").trim();
-      
-      const matchData = JSON.parse(jsonText);
+      let jsonText =
+        aiResult.choices[0].message.content?.trim() || "";
 
+      jsonText = jsonText
+        .replace(/```json\n?|\n?```/g, "")
+        .trim();
+
+      const matchData = JSON.parse(jsonText);
+      
       // Save JD
       const jdDoc = await addDoc(collection(db, 'jobDescriptions'), {
         userId: auth.currentUser.uid,
